@@ -65,6 +65,9 @@ class ThunderHead:
             time.sleep(300)
 
     # checks if a change or low warrants an alert
+    # this is where the heart of the dynamic monitoring will occur
+    # I need to whiteboard the situations in which I want the alerts to happen
+    # the goal is to have code that can monitor blood sugar and dynamically alter it's threshold 
     def check(self, bg, change):
         if bg <= self.low:
             return True
