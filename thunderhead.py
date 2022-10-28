@@ -16,8 +16,10 @@ class ThunderHead:
         self.conn = None
         self.dexcom = None
         self.bgvs = []
+        self.slopes = []
         self.change = change
         self.low = low
+        self.time_passed = 0
         # Create new dexcom object
         self.create_dexcom()
 
@@ -33,12 +35,13 @@ class ThunderHead:
         print(bg.value)
 
     # Uses the Pushover API to send a message
-    def send_message(self, message = "DEFAULT MESSAGE"):
+    def send_message(self, message = "DEFAULT MESSAGE", title = "Thunderhead Notification"):
         conn = http.client.HTTPSConnection("api.pushover.net:443")
         conn.request("POST", "/1/messages.json",
         urllib.parse.urlencode({
             "token": "a7hxahk94ajn8tyt5y13wnq4dwia1t",
             "user": "u39yretpf7kpu775jm8djwey42t8jh",
+            "title": title,
             "message": f"{message}",
         }), { "Content-type": "application/x-www-form-urlencoded" })
         conn.getresponse()
@@ -59,6 +62,7 @@ class ThunderHead:
             next_bg = self.dexcom.get_current_glucose_reading().value
             # add next blood glucose to stored values
             self.bgvs.append(next_bg)
+            #print(next_bg)
             # check if an alert is warranted
             self.send_update()
             # wait 5 minutes
@@ -69,12 +73,40 @@ class ThunderHead:
     # I need to whiteboard the situations in which I want the alerts to happen
     # the goal is to have code that can monitor blood sugar and dynamically alter it's threshold 
     def check(self, bg, change):
-        if bg <= self.low:
+        if bg <= self.low or change <= self.change:
             return True
-        if change <= self.change:
-            return True
+        if change > -10 and change < 0:
+            estimated_change = change * 3
+            estimated_bg = bg + estimated_change
+            if estimated_bg <= self.low:
+                return True
+            else:
+                return False 
+        if change < -10:
+            estimated_change = change * 4
+            estimated_bg = bg + estimated_change
+            if estimated_bg <= self.low:
+                return True
+            else:
+                return False
         return False
             
+    def make_message(self):
+        bg_len = len(self.bgvs)
+        slope_len = len(self.slopes)
+        cur_slope = self.slopes[slope_len - 1]
+        old_slope = self.slopes[slope_len - 2]
+        # new bg
+        cur_bg = self.bgvs[bg_len - 1]
+        # old bg
+        old_bg = self.bgvs[bg_len - 2]
+        estimated_bg = cur_bg + cur_slope
+        old_estimation = old_bg + old_slope
+        change_in_slope = cur_slope - old_slope
+        message = f"Blood Glucose: {cur_bg} (estimated to be {estimated_bg} in 5 minutes)\nCurrent Change: {cur_slope} \n Slope Trend: {change_in_slope} \n Current sugar ({cur_bg}) was estimated to be {old_estimation}"
+        return message
+        
+
     # gets the current bg and old blood glucose to calculate change in order to potentially send an alert
     def send_update(self):
         bg_len = len(self.bgvs)
@@ -84,23 +116,31 @@ class ThunderHead:
         old_bg = self.bgvs[bg_len - 2]
         # Sets sign="+" if the change is positive and "-" if negative
         # if sign="#" then something has happened that I did not anticipate
-        sign = "#"
-        if new_bg >= old_bg:
-            sign = "+"
+        # sign = "#"
+        # if new_bg >= old_bg:
+        #     sign = "+"
+        # else:
+        #     sign = "-"
+        change = new_bg - old_bg
+        self.slopes.append(change)
+        if self.time_passed < 60:
+            self.time_passed += 5
         else:
-            sign = "-"
-        change = abs(new_bg - old_bg)
+            self.send_message("ThunderHead is still active")
+            self.time_passed = 0
         # checks to see if the change or current bg warrant an alert
         # the else statement is just to debug so you get an alert everytime regardless
         if self.check(new_bg, change):
-            message = f"Current Glucose : {new_bg}\nChange : {sign}{change}"
-            self.send_message(message)
-        else:
-            message = f" DEBUG (NOT AN ALERT)\nCurrent Glucose : {new_bg}\nChange : {sign}{change}"
-            self.send_message(message)
+            message = self.make_message()
+            print(message)
+            print()
+            self.send_message(message, "LOW ANTICIPATED")
+        # else:
+        #     message = self.make_message()
+        #     print(message)
+        #     print()
+        #     self.send_message(message)
         
-
-
     # Not working yet
     # Potential plan is to create a database to get a summary notification each day
     # Talk to mom about how best to set up the database
