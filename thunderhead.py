@@ -48,23 +48,36 @@ class ThunderHead:
 
     # Gets a blood sugar reading every 5 minutes and checks to see if an alert is warranted
     def watch(self):
-        print("Starting watch...")
+        self.send_message(message = "Starting watch...", title = "ThunderHead Notification")
         # reset stored blood glucose levels 
         self.bgvs = []
         # get the initial blood sugar reading
-        initial_bg = self.dexcom.get_current_glucose_reading().value
+        initial_bg = self.dexcom.get_current_glucose_reading()
+        if initial_bg is None:
+            self.send_message("No Blood Glucose Value")
+            time.sleep(300)
+        else:
+            initial_bg = initial_bg.value
+            self.bgvs.append(initial_bg)
         # add the initial value to stored values
-        self.bgvs.append(initial_bg)
+        ##self.bgvs.append(initial_bg)
         # wait 5 minutes
         time.sleep(300)
         while True:
             # get next blood glucose
-            next_bg = self.dexcom.get_current_glucose_reading().value
+            next_bg = self.dexcom.get_current_glucose_reading()
+            if next_bg is None:
+                self.send_message("No Blood Glucose Value")
+                time.sleep(300)
+            else:
+                next_bg = next_bg.value
+                self.bgvs.append(next_bg)
+                self.send_update()
             # add next blood glucose to stored values
-            self.bgvs.append(next_bg)
+            ##self.bgvs.append(next_bg)
             #print(next_bg)
             # check if an alert is warranted
-            self.send_update()
+            ##self.send_update()
             # wait 5 minutes
             time.sleep(300)
 
