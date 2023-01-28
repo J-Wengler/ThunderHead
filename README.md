@@ -15,6 +15,7 @@ python3 main.py
 ***Details: ThunderHead uses the weighed average of the last 3 changes in blood glucose to predict where the blood sugar is trending, you can manually change the weights in the web app to experiment with different values to see what works best for you.***
 
 Relevant Documentation:
+
 [Flask](https://flask.palletsprojects.com/en/2.2.x/)
 
 [TurboFlask](https://turbo-flask.readthedocs.io/en/latest/)
