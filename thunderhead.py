@@ -14,6 +14,10 @@ from datetime import datetime
 
 # This is the actual 'algorithm' part of the app. It's not a true backend as it doesn't accept API calls
 # The flask 'frontend' creates an instance of this class to provide the necessary visual information
+# Flask interacts with this class in two ways.
+#   1. Initiates the class then calls create_dexcom() with the necessary information
+#   2. Calls get_update() to get information to display to the user. The order that the functions get called are get_update() -> calc_slopes() -> check()
+# TODO: Instead of providing preformatted text, return [HIGH, LOW, STABLE] and predicted glucose value at 5, 10, 15mins 
 
 class ThunderHead: 
 
@@ -83,7 +87,10 @@ class ThunderHead:
         # Return completed message
         return time_message
 
-   
+    
+    # This functions takes a current blood sugar and slope (calculated in calc_slopes()) and predicts what the blood sugar will be in 15 mins
+    # Based off the prediction the function returns a STABLE, LOW, or HIGH message with the appropiate information
+    # RETURN: Text with information to be displayed by frontend
     def check(self, current_bg, slope):
         predicted_bg = current_bg + (slope * 3)
         past_bg = self.bgvs[len(self.bgvs) - 2]
@@ -96,7 +103,6 @@ class ThunderHead:
             return message
             #self.send_message(message=message, title= "HIGH PREDICTED")
         else:
-            # FIXME: add default message
             message = f"Status: Stable blood sugar\nCurrent Glucose: {current_bg}\nPredicted to be stable({self.low}-{self.high})"
             return message
 
@@ -124,7 +130,7 @@ class ThunderHead:
                 message = f"Status: ALGORITHM ERROR\nCould not run predictive algorithm. One of these values ({data_1}, {data_2}, {data_3}, {data_4}) was -99"
                 return message
 
-            # Calculate the 3 slopes then find their weighted average, pass the weighted average and current blood sugar 
+            # Calculate the 3 slopes then find their weighted average, pass the weighted average and current blood sugar to check() to craft final message
             else:
                 first_slope = data_2 - data_1
                 second_slope = data_3 - data_2 
@@ -132,4 +138,5 @@ class ThunderHead:
                 average_slope = (first_slope * self.fw) + (second_slope * self.sw) + (third_slope * self.tw)
                 cur_bg = data_4
                 message = self.check(cur_bg, average_slope)
+                # Return message
                 return message
