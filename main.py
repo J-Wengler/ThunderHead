@@ -1,7 +1,7 @@
 from thunderhead import ThunderHead
 import http.client, urllib
 
-thunder = ThunderHead("Mandajacobson98", "Cayman2ajw!!", change = -30, low = 60)
+thunder = ThunderHead("Mandajacobson98", "Cayman2ajw!!", change = -30, low = 60, high = 275)
 try:
     thunder.watch()
 except Exception as e:
