@@ -16,7 +16,9 @@ python3 main.py
 
 Relevant Documentation:
 [Flask](https://flask.palletsprojects.com/en/2.2.x/)
+
 [TurboFlask](https://turbo-flask.readthedocs.io/en/latest/)
+
 [PyDexcom](https://github.com/gagebenne/pydexcom)
 
 **Next Step: Move flask app to Google Cloud (custom domain: sugarwatch.net)**
