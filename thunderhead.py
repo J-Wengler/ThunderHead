@@ -1,22 +1,25 @@
-from hashlib import new
+# _,.-'~'-.,__,.-'~'-.,__,.-'~'-.,__,.-'~'-.,__,.-'~'-.,_
+
+# ThunderHead Backend
+# Current Version: 3.0.2
+# Author: Jimmy Wengler
+# Last Updated: Jan 28
+
+# _,.-'~'-.,__,.-'~'-.,__,.-'~'-.,__,.-'~'-.,__,.-'~'-.,_
+
 from pydexcom import Dexcom
-import sqlite3
-import pandas as pd
 import time
 import http.client, urllib
-import flask
-from flask import render_template
 from datetime import datetime
 
-FIRSTWEIGHT = .25
-SECONDWEIGHT = .25
-THIRDWEIGHT = .50
+# This is the actual 'algorithm' part of the app. It's not a true backend as it doesn't accept API calls
+# The flask 'frontend' creates an instance of this class to provide the necessary visual information
 
 class ThunderHead: 
-    # username = dexcom username
-    # password = dexcom password
+
     # change = the threshold for change between concurrent blood glucose levels that you want to prompt an alert
     # low = the low threshold below which you want to be alerted
+    # high = the high threshold above which you want to be alerted
     def __init__(self, change, low, high):
         self.conn = None
         self.dexcom = None
@@ -32,7 +35,9 @@ class ThunderHead:
         # Create new dexcom object
         #self.create_dexcom()
 
-    # Uses the pydexcom package to create a new dexcom object
+    # Uses the pydexcom package to create a new dexcom object and store it as a member of the class
+    # Some variables are cast to numeric values becase the flask form provides text as the default type
+    # TODO: Change flask form to automatically provide numeric data to reduce casting
     def create_dexcom(self, username, password, low, high, fw, sw, tw):
         new_dexcom = Dexcom(username, password)
         self.dexcom = new_dexcom
@@ -43,125 +48,42 @@ class ThunderHead:
         self.sw = float(sw)
         self.tw = float(tw)
 
+    # Checks to see if a dexcom object has been created in the class
+    # RETURN: bool 
     def check_dexcom(self):
         if self.dexcom is None:
             return False
         else:
             return True
 
+    # Provides the update text that flask displays on the web page
+    # Flask calls this function every 5 minutes
+    # RETURN: text to be displayed by frontend
     def get_update(self):
+        # Get the current blood sugar
         bg = self.dexcom.get_current_glucose_reading()
+
+        # Check if sensor is reading, -99 means no blood sugar value is available
         if bg is None:
             bg = -99
         else:
             bg = bg.value
 
+        # Append the new glucose value
         self.bgvs.append(bg)
-        message = self.calc_slopes()
-        now = datetime.now()
 
+        # Once current glucose has been added, we can run the predictive algorithm and get the appropiate status message
+        message = self.calc_slopes()
+
+        # Appends the current time to the end of the status message. Useful for ensuring the frontend is updating every 5 mins
+        now = datetime.now()
         current_time = now.strftime("%H:%M:%S")
         time_message = f"{message}\nLast Updated: {current_time}"
+
+        # Return completed message
         return time_message
-        
 
-
-
-
-    # Uses the current dexcom object to get the current blood glucose
-    def get_current_blood_sugar(self):
-        bg = self.dexcom.get_current_glucose_reading()
-        print(bg.value)
-
-    # Uses the Pushover API to send a message
-    def send_message(self, message = "DEFAULT MESSAGE", title = "Test"):
-        print(message)
-        conn = http.client.HTTPSConnection("api.pushover.net:443")
-        conn.request("POST", "/1/messages.json",
-        urllib.parse.urlencode({
-            "token": "a7hxahk94ajn8tyt5y13wnq4dwia1t",
-            "user": "u39yretpf7kpu775jm8djwey42t8jh",
-            "title": title,
-            "message": f"{message}",
-        }), { "Content-type": "application/x-www-form-urlencoded" })
-        conn.getresponse()
-
-    # Gets a blood sugar reading every 5 minutes and checks to see if an alert is warranted
-    def watch(self):
-        
-        self.send_message(message = "Starting (test) watch...", title = "ThunderHead Test")
-        # reset stored blood glucose levels 
-        self.bgvs = []
-        # get the initial blood sugar reading
-        initial_bg = self.dexcom.get_current_glucose_reading()
-        if initial_bg is None:
-            self.send_message("No Blood Glucose Value")
-            self.bgvs.append(-99)
-        else:
-            initial_bg = initial_bg.value
-            self.bgvs.append(initial_bg)
-        # add the initial value to stored values
-        ##self.bgvs.append(initial_bg)
-        # wait 5 minutes
-        time.sleep(300)
-        while True:
-            # get next blood glucose
-            next_bg = self.dexcom.get_current_glucose_reading()
-            if next_bg is None:
-                self.send_message("No Blood Glucose Value")
-                self.bgvs.append(-99)
-                #self.calc_slopes()
-                #time.sleep(300)
-            else:
-                next_bg = next_bg.value
-                self.bgvs.append(next_bg)
-                self.calc_slopes()
-            # add next blood glucose to stored values
-            ##self.bgvs.append(next_bg)
-            #print(next_bg)
-            # check if an alert is warranted
-            ##self.send_update()
-            # wait 5 minutes
-            time.sleep(300)
-
-    # checks if a change or low warrants an alert
-    # this is where the heart of the dynamic monitoring will occur
-    # I need to whiteboard the situations in which I want the alerts to happen
-    # the goal is to have code that can monitor blood sugar and dynamically alter it's threshold 
-    # def check(self, bg, change):
-    #     if bg <= self.low or change <= self.change:
-    #         return True
-    #     if change > -10 and change < 0:
-    #         estimated_change = change * 3
-    #         estimated_bg = bg + estimated_change
-    #         if estimated_bg <= self.low:
-    #             return True
-    #         else:
-    #             return False 
-    #     if change < -10:
-    #         estimated_change = change * 4
-    #         estimated_bg = bg + estimated_change
-    #         if estimated_bg <= self.low:
-    #             return True
-    #         else:
-    #             return False
-    #     return False
-            
-    # def make_message(self):
-    #     bg_len = len(self.bgvs)
-    #     slope_len = len(self.slopes)
-    #     cur_slope = self.slopes[slope_len - 1]
-    #     old_slope = self.slopes[slope_len - 2]
-    #     # new bg
-    #     cur_bg = self.bgvs[bg_len - 1]
-    #     # old bg
-    #     old_bg = self.bgvs[bg_len - 2]
-    #     estimated_bg = cur_bg + cur_slope
-    #     old_estimation = old_bg + old_slope
-    #     change_in_slope = cur_slope - old_slope
-    #     message = f"Blood Glucose: {cur_bg} (estimated to be {estimated_bg} in 5 minutes)\nCurrent Change: {cur_slope} \n Slope Trend: {change_in_slope} \n Current sugar ({cur_bg}) was estimated to be {old_estimation}"
-    #     return message
-        
+   
     def check(self, current_bg, slope):
         predicted_bg = current_bg + (slope * 3)
         past_bg = self.bgvs[len(self.bgvs) - 2]
@@ -179,22 +101,30 @@ class ThunderHead:
             return message
 
 
-    # gets the current bg and old blood glucose to calculate change in order to potentially send an alert
+    # Uses the 4 previous data points to generate a prediction of what the blood sugar will be at in 15 mins
+    # RETURN text message to be displayed by frontend
     def calc_slopes(self):
+        # Check how many glucose values we have. If less than 4 return error message
         bg_len = len(self.bgvs)
         if bg_len < 4:
             message = "Status: ALGORITHM ERROR\nInsufficient data to run algorithm"
             return message
-            #self.send_message("Insufficient data to run algorithm", title = "ALGORITHM ERROR")
+
+        # Calculate the 3 changes in blood glucose values over the last 4 data points
+        # Uses check() to predict blood sugar and check if alert is warranted
         else:
             data_1 = self.bgvs[bg_len - 4]
             data_2 = self.bgvs[bg_len - 3]
             data_3 = self.bgvs[bg_len - 2]
             data_4 = self.bgvs[bg_len - 1]
+            
+            # If one of the past 4 data points is -99 then we don't have the necessary data to run algorithm
+            # Return error message
             if data_1 == -99 or data_2 == -99 or data_3 == -99 or data_4 == -99:
                 message = f"Status: ALGORITHM ERROR\nCould not run predictive algorithm. One of these values ({data_1}, {data_2}, {data_3}, {data_4}) was -99"
                 return message
-                #self.send_message(message = message, title = "ALGORITHM ERROR")
+
+            # Calculate the 3 slopes then find their weighted average, pass the weighted average and current blood sugar 
             else:
                 first_slope = data_2 - data_1
                 second_slope = data_3 - data_2 
@@ -203,10 +133,3 @@ class ThunderHead:
                 cur_bg = data_4
                 message = self.check(cur_bg, average_slope)
                 return message
-
-# Example bgvs = 120 (1), 115 (2), 117(3), 105(4)
-        
-        
-# TODO
-# Add -99 as bgv when no value is read
-# Handle above when checking 
