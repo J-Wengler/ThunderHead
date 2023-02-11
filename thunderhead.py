@@ -64,6 +64,9 @@ class ThunderHead:
     # Flask calls this function every 5 minutes
     # RETURN: text to be displayed by frontend
     def get_update(self):
+        bgvs = self.dexcom.get_glucose_readings(minutes=60, max_count= 4)
+        # FIXME: USE ABOVE DATA TO MAKE TREND AUTOMATICALLY SO NO UPDATE
+
         # Get the current blood sugar
         bg = self.dexcom.get_current_glucose_reading()
 

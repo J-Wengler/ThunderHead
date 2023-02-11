@@ -15,7 +15,7 @@ import threading
 import time
 from thunderhead import ThunderHead
 
-# This is the flask 'frontend.' It doesn't connect to the backend via API calls, but rather creates an instance the the ThunderHead class
+# This is the flask 'frontend.' It doesn't connect to the backend via API calls, but rather creates an instance of the ThunderHead class
 # In all honesty, I'm a little hazy on how this works. Since we want part of the webpage to update automatically, we use the TurboFlask 
 # extension to do that. I'll do my best to explain the flow, but specific details are best found in the Flask/TurboFlask documentation
 
