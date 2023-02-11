@@ -19,6 +19,8 @@ from datetime import datetime
 #   2. Calls get_update() to get information to display to the user. The order that the functions get called are get_update() -> calc_slopes() -> check()
 # TODO: Instead of providing preformatted text, return [HIGH, LOW, STABLE] and predicted glucose value at 5, 10, 15mins 
 
+# FIXME: REMOVE TURBOFLASK AND MAKE IT SO THE USER JUST REFRESHES THE PAGE EVERY 5 MINUTES TO GET THE NEW TREND. THEN WE CAN MOVE TO JAVASCRIPT
+
 class ThunderHead: 
 
     # change = the threshold for change between concurrent blood glucose levels that you want to prompt an alert
