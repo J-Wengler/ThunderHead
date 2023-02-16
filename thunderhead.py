@@ -66,8 +66,49 @@ class ThunderHead:
     # Flask calls this function every 5 minutes
     # RETURN: text to be displayed by frontend
     def get_update(self):
+        if self.dexcom == None:
+            return ["NA", "NA", "NO DEXCOM OBJECT"]
         bgvs = self.dexcom.get_glucose_readings(minutes=60, max_count= 4)
+        try:
+            temp = self.dexcom.get_current_glucose_reading()
+            if temp == None:
+                return ["NA", "NA", "DEXCOM COULD NOT FIND A CURRENT BLOOD GLUCOSE"]
+        except:
+            return["NA", "NA", "DEXCOM COULD NOT FIND A CURRENT BLOOD GLUCOSE"]
+
         # FIXME: USE ABOVE DATA TO MAKE TREND AUTOMATICALLY SO NO UPDATE
+        if len(bgvs) < 4:
+            cur = self.dexcom.get_current_glucose_reading()
+            if cur == None:
+                return ["NA", "NA", "DEXCOM DID NOT RETURN CONTINOUS DATA FOR THE LAST 20 MINUTES"]
+            else: 
+                return [cur.value, "NA", "DEXCOM DID NOT RETURN CONTINOUS DATA FOR THE LAST 20 MINUTES"]
+        else:
+            can_check = True
+            for bg in bgvs:
+                if bg == None:
+                    can_check = False
+
+            if can_check:
+                #self.print_bgvs(bgvs)
+                data_1 = bgvs[3].value
+                data_2 = bgvs[2].value
+                data_3 = bgvs[1].value
+                data_4 = bgvs[0].value
+
+                first_slope = data_2 - data_1
+                second_slope = data_3 - data_2 
+                third_slope = data_4 - data_3
+                average_slope = (first_slope * self.fw) + (second_slope * self.sw) + (third_slope * self.tw)
+                cur_bg = data_4
+                # FIXME: change function below to return list of things for html
+                return self.check(cur_bg, average_slope)
+            else:
+                cur = self.dexcom.get_current_glucose_reading()
+                if cur == None:
+                    return ["NA", "NA", "DEXCOM DID NOT RETURN CONTINOUS DATA FOR THE LAST 20 MINUTES"]
+                else: 
+                    return [cur.value, "NA", "DEXCOM DID NOT RETURN CONTINOUS DATA FOR THE LAST 20 MINUTES"]
 
         # Get the current blood sugar
         bg = self.dexcom.get_current_glucose_reading()
@@ -98,18 +139,18 @@ class ThunderHead:
     # RETURN: Text with information to be displayed by frontend
     def check(self, current_bg, slope):
         predicted_bg = current_bg + (slope * 3)
-        past_bg = self.bgvs[len(self.bgvs) - 2]
+        #past_bg = self.bgvs[len(self.bgvs) - 2]
         if predicted_bg <= self.low:
-            message = f"Status: LOW PREDICTED\nCurrent Glucose: {current_bg} \nPredicted Glucose (15mins): {predicted_bg}\nAverage Drop: {slope}\nPrevious Glucose Value: {past_bg}"
-            return message
+            message = f"LOW PREDICTED - Average Fall: {slope}"
+            return [current_bg, predicted_bg, message]
             #self.send_message(message=message, title= "LOW PREDICTED")
         elif predicted_bg >= self.high:
-            message = f"Status: HIGH PREDICTED\nCurrent Glucose: {current_bg} \nPredicted Glucose (15mins): {predicted_bg}\nAverage Drop: {slope}\nPrevious Glucose Value: {past_bg}"
-            return message
+            message = f"Status: HIGH PREDICTED - Average Rise: {slope}"
+            return [current_bg, predicted_bg, message]
             #self.send_message(message=message, title= "HIGH PREDICTED")
         else:
             message = f"Status: Stable blood sugar\nCurrent Glucose: {current_bg}\nPredicted to be stable({self.low}-{self.high})"
-            return message
+            return [current_bg, predicted_bg, ""]
 
 
     # Uses the 4 previous data points to generate a prediction of what the blood sugar will be at in 15 mins

@@ -1,7 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>ThunderHead</title>
+  <meta http-equiv="refresh" content="300">
+</head>
+<body>
 
-{% extends "base.html" %}
 
-{% block content %}
-<h3>Welcome To ThunderHead!</h3>
-<p>Welcome to Version 3.0.0 of ThunderHead. This app was designed to monitor Dexcom data in an easily accessible way. The above box will display the current dexcom status. PLEASE DO NOT REFRESH THE PAGE, this will mess with the data. The page will automatically update every 5 mins.</p>
-{% endblock %}
+<BODY BGCOLOR="#000000"></BODY>
+<h2><FONT COLOR=red font size="+10">{{ alert }}</FONT></h2>
+<BODY style="border-width:3px; border-style:solid; border-color:#FF0000; padding: 1em;">
+<h3><FONT COLOR=white> Current Blood sugar = <font size="+3">{{ cur_bg }}</font></FONT></h3>
+<h3><FONT COLOR=white>Predicted Blood sugar (15mins) = <font size="+3">{{ predicted_bg }}</font></FONT></h3>
+</BODY>
+<p><FONT COLOR=white>Last updated : {{ time }}</FONT></p>
+<p><FONT COLOR=white>Welcome to Version 4.0.1 of ThunderHead. This app was designed to monitor Dexcom data in an easily accessible way. Predicted blood glucose value is calculated using the weighted average of the last 3 changes in blood sugar.</FONT> </p>
+</BODY>
