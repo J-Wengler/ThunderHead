@@ -53,9 +53,6 @@ def index():
 
     return render_template('index.html', cur_bg = cur, predicted_bg = pred, alert = alr, time = current_time)
 
-def returnNum():
-    return random.randint(0,100)
-
 
 # Fairly hazy on this function. From my understanding these are the specific steps that are called by turboflask when it replaces the data
 # the stat variable is the status message pulled from the ThunderHead object
