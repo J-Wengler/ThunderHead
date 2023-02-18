@@ -16,11 +16,6 @@ from thunderhead import ThunderHead
 from datetime import datetime
 
 
-# This is the flask 'frontend.' It doesn't connect to the backend via API calls, but rather creates an instance of the ThunderHead class
-# In all honesty, I'm a little hazy on how this works. Since we want part of the webpage to update automatically, we use the TurboFlask 
-# extension to do that. I'll do my best to explain the flow, but specific details are best found in the Flask/TurboFlask documentation
-
-# Declare Flask, TurboFlask, and Thunderhead objects
 app = Flask(__name__)
 thunder = ThunderHead(change = -30, low = 65, high = 250)
 
@@ -61,3 +56,16 @@ def index():
 # Port 4999 instead of the more traditional 5000 because 5000 is reserved for the airplay task on macs
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=4999, debug=True)
+
+# FIXME:
+# Big Changes..
+# Need to create a full account login system
+# From the full login page, then move to the second login page with dexcom NUMBERS (not login)
+# Check if the session ID is valid, if so then move to the tracker page, pass session ID into every get_update() function
+# If the session ID is invalid, then you'll need to redirect to a dexcom login page that returns a session ID
+# Changes to make to the pydexcom package
+# - New function that returns bgvs given an appropiate sessionID
+#   - If function is given an invalid ID, then switch to the dexcom login page
+# Database will need to store:
+# - username, password, dexcomSESSION-ID, high, low, fw, sw, tw 
+# Will need to log into dexcom every 24 hours
