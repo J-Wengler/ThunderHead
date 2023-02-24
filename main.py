@@ -69,3 +69,4 @@ if __name__ == '__main__':
 # Database will need to store:
 # - username, password, dexcomSESSION-ID, high, low, fw, sw, tw 
 # Will need to log into dexcom every 24 hours
+# prompt the user to ask to store their data! explain it well and give them the option.
